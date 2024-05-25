@@ -77,7 +77,7 @@ class Brain:
         for i in range(self.iterations + 1):
             if self.batch_size is not None:
                 X_train, y_train = self.data.get_batch(self.batch_size)
-                loss = self.__criterion(self.net(X_train), y_train)
+                loss = self.__criterion(self.net(X_train), y_train) # validate training
             else:
                 loss = self.__criterion(self.net(self.data.X_train), self.data.y_train)
             if i % self.print_every == 0 or i == self.iterations:

@@ -48,8 +48,15 @@ class SPNN(ln.nn.LossNN):
         
     # X['interval'] is num * 1
     def criterion(self, X, y):
-        Q = self.params['Qslope'] * X['interval'] + self.params['Qincpt']
-        P = 0.0 * X['interval'] + self.params['Pincpt']
+        Qslope = self.QslopeNet(X)
+        Pincpt = self.PincptN(X)
+        Qincpt = self.params
+        Q = Qslope * X['interval'] + Qincpt
+        P = 0.0 * X['interval'] + Pincpt
+
+        # Q = self.params['Qslope'] * X['interval'] + self.params['Qincpt']
+        # P = 0.0 * X['interval'] + self.params['Pincpt']
+
         QP = torch.cat([Q,P], axis = -1).reshape([-1, self.latent_dim * 2])
         qp = self.net(QP)
         H = self.H(qp)  # (trajs*num) *1
@@ -88,8 +95,12 @@ class SPNN(ln.nn.LossNN):
     
     # MSE of bd err + sum of |min(h(q),0)|^2 (i.e., penalty method using quadratic)
     def con_loss(self, X, y):
-        Q = self.params['Qslope'] * X['interval'] + self.params['Qincpt']
-        P = 0.0 * X['interval'] + self.params['Pincpt']
+        Qslope, Pincpt, Qincpt = self.params(1)
+        Q = Qslope * X['interval'] + Qincpt
+        P = 0.0 * X['interval'] + Pincpt
+
+        # Q = self.params['Qslope'] * X['interval'] + self.params['Qincpt']
+        # P = 0.0 * X['interval'] + self.params['Pincpt']
         QP = torch.cat([Q,P], axis = -1).reshape([-1, self.latent_dim * 2])
         q = self.net(QP)[...,:self.dim]
         con_loss = torch.mean(torch.relu(-self.h(q))**2)
@@ -97,8 +108,11 @@ class SPNN(ln.nn.LossNN):
     
     # prediction without added dims
     def predict(self, t, returnnp=False):
-        Q = self.params['Qslope'] * t + self.params['Qincpt']
-        P = 0.0 * t + self.params['Pincpt']
+        Qslope, Pincpt, Qincpt = self.params(1)
+        Q = Qslope * t + Qincpt
+        P = 0.0 * t + Pincpt
+        # Q = self.params['Qslope'] * t + self.params['Qincpt']
+        # P = 0.0 * t + self.params['Pincpt']
         QP = torch.cat([Q,P], dim = -1)
         qp = self.net(QP)
         q = qp[...,:self.dim]
@@ -110,8 +124,11 @@ class SPNN(ln.nn.LossNN):
     
     # prediction q without added dims
     def predict_q(self, t, returnnp=False):
-        Q = self.params['Qslope'] * t + self.params['Qincpt']
-        P = 0.0 * t + self.params['Pincpt']
+        Qslope, Pincpt, Qincpt = self.params(1)
+        Q = Qslope * t + Qincpt
+        P = 0.0 * t + Pincpt
+        # Q = self.params['Qslope'] * t + self.params['Qincpt']
+        # P = 0.0 * t + self.params['Pincpt']
         QP = torch.cat([Q,P], dim = -1)
         qp = self.net(QP)
         q = qp[...,:self.dim]
@@ -121,8 +138,11 @@ class SPNN(ln.nn.LossNN):
     
     # t is num * 1
     def predict_v(self, t, returnnp=False):
-        Q = self.params['Qslope'] * t + self.params['Qincpt']
-        P = 0.0 * t + self.params['Pincpt']
+        Qslope, Pincpt, Qincpt = self.params(1)
+        Q = Qslope * t + Qincpt
+        P = 0.0 * t + Pincpt
+        # Q = self.params['Qslope'] * t + self.params['Qincpt']
+        # P = 0.0 * t + self.params['Pincpt']
         QP = torch.cat([Q,P], axis = -1).reshape([-1, self.latent_dim * 2])
         qp = self.net(QP)    
         grad_output = self.params['Qslope'].repeat([1,QP.shape[0]//self.trajs, 1]).reshape([-1, self.latent_dim])
@@ -239,11 +259,18 @@ class SPNN(ln.nn.LossNN):
         cost = torch.sum(L[...,0], -1) * dt
         return cost
         
+    # def __init_param(self):
+    #     params = torch.nn.ParameterDict()
+    #     params['Qincpt'] = torch.nn.Parameter(torch.ones((self.trajs, 1, self.latent_dim)))
+    #     params['Qslope'] = torch.nn.Parameter(torch.ones((self.trajs, 1, self.latent_dim)))
+    #     params['Pincpt'] = torch.nn.Parameter(torch.ones((self.trajs, 1, self.latent_dim)))
+    #     self.params = params
+
     def __init_param(self):
         params = torch.nn.ParameterDict()
-        params['Qincpt'] = torch.nn.Parameter(torch.ones((self.trajs, 1, self.latent_dim)))
-        params['Qslope'] = torch.nn.Parameter(torch.ones((self.trajs, 1, self.latent_dim)))
-        params['Pincpt'] = torch.nn.Parameter(torch.ones((self.trajs, 1, self.latent_dim)))
+        params['Qincpt'] = QincptNet()
+        params['Qslope'] = QslopeNet()
+        params['Pincpt'] = PincptNet()
         self.params = params
         
     def __init_net(self, layers, width, activation, ntype):

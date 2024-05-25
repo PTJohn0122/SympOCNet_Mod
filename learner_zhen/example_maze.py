@@ -29,7 +29,7 @@ class MZNN(SPNN):
         self.dr = dr                # radius of the drone
         self.ws = ws                # starting points of the obstacles
         self.angles = angles        # angles of the obstacles
-        self.num_obs = len(ws)      
+        self.num_obs = len(ws)      # number of obstacles
         self.qr = qr                # width of the obstacle
         self.ql = ql                # length of the obstacle
     

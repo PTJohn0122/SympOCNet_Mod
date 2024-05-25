@@ -33,10 +33,16 @@ class SPData(ln.Data):
         # positions
         X['bd'] = np.array([0, self.t_terminal])[:,None]
         # values (could be changed if needed)
+        # print(f"q_initial: {self.q_initial}, traj_num: {traj_num}, num: {num}")
         q_initial = np.expand_dims(self.q_initial, 0).repeat(traj_num, axis = 0)
+        # print(f"1 - shape of q_initial: {q_initial.shape}")
         q_initial = q_initial + (2 * np.random.rand(*q_initial.shape) - 1) * noise
+        # print(f"2 - shape of q_initial: {q_initial.shape}")
         q_terminal = np.expand_dims(self.q_terminal, 0).repeat(traj_num, axis = 0)
         y['bd'] = np.transpose(np.array([q_initial, q_terminal]), (1,0,2))
+        # print("[data] X[interval].shape = ", X['interval'].shape)
+        # print("[data] y[bd].shape = ", y['bd'].shape)
+        # print(y)
         return X, y
     
     def __init_data(self):
