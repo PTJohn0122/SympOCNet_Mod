@@ -23,11 +23,12 @@ class PSmethod :
         self.net = net  # use net to access the h function
         self.x_init = x_init # initial position
         self.x_term = x_term # terminal position
-
+        self.curr_iter = 0
         # initialization
         tensor_t = torch.tensor(self.time_all_nodes[:,None], dtype=self.net.dtype, device=self.net.device)
         x_nn = net.predict_q(tensor_t, True)[traj_index]
-        u_nn = net.predict_v(tensor_t, True)[traj_index]
+        u_nn = net.predict_v(tensor_t, True).reshape([100, 57, 8])[traj_index]
+        print(f"x_nn: {x_nn.shape}, u_nn: {u_nn.shape}")
         self.initial_x = x_nn.reshape([-1])
         self.initial_u = u_nn.reshape([-1])
         self.initial_xu = np.concatenate([self.initial_x, self.initial_u])
@@ -39,7 +40,7 @@ class PSmethod :
         def equation_constraint(xu, D, num_segs, dim, time_end_pts, x_init, x_term):
             num_nodes = D.shape[0]
             u0_ind = num_segs * num_nodes * dim # u's starting index
-            assert len(xu) == 2* u0_ind, "xu length error"
+            assert len(xu) == 2* u0_ind, f"xu length error, expecting {2* u0_ind}, actual {len(xu)}"
             x = xu[:u0_ind].reshape([num_segs, num_nodes, dim])
             u = xu[u0_ind:].reshape([num_segs, num_nodes, dim])
             # x'=u: (num_segs * num_nodes * dim)
@@ -111,6 +112,8 @@ class PSmethod :
             #ret = np.concatenate([err, err1, err2, err3, err4], axis = 0)
             '''
             ret = np.concatenate([err, err1, err2], axis = 0)
+            self.curr_iter += 1
+            print(self.curr_iter)
             return ret
 
         '''
@@ -152,10 +155,11 @@ class PSmethod :
         print(np.amax(np.abs(equation_constraint(self.initial_xu, self.D, self.num_segs, self.dim, self.time_endpts, self.x_init, self.x_term))))
         print('min initial ineq constraint val:')
         print(np.amin(nonneg_constraint(self.initial_xu, self.net, self.num_segs, self.num_nodes)))
-
+        print(f"start optimize, maxiter = {maxiter}")
         res = optimize.minimize(cost, self.initial_xu, args=(self.w, self.num_segs, self.dim),
                                 constraints=cons, jac=cost_grad, method='SLSQP',
                                 options={"disp": True, "maxiter": maxiter, "ftol": ftol})
+        print("start optimize")
         self.opt_xu = res.x
         print('max PS eq constraint val:')
         print(np.amax(np.abs(equation_constraint(res.x, self.D, self.num_segs, self.dim, self.time_endpts, self.x_init, self.x_term))))

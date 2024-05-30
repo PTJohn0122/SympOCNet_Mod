@@ -177,26 +177,35 @@ class SPNN(ln.nn.LossNN):
         # P = 0.0 * t + self.params['Pincpt']
         Q = self.params['Qslope'](t.squeeze(-1)) * t + self.params['Qincpt'](t.squeeze(-1))
         P = 0.0 * t + self.params['Pincpt'](t.squeeze(-1))
+        print(f"Q shape: {Q.shape}, P shape: {P.shape}")
         QP = torch.cat([Q,P], dim = -1)
+        print(f"[predict_q] QP shape: {QP.shape}")
         qp = self.net(QP)
         q = qp[...,:self.dim]
         if returnnp:
             q = q.detach().cpu().numpy()
+        print(f"predict q shape: {q.shape}")
         return q
         
     # t is num * 1
     def predict_v(self, t, returnnp=False):
         # Q = self.params['Qslope'] * t + self.params['Qincpt']
         # P = 0.0 * t + self.params['Pincpt']
+        print(f"[predict_v] t shape: {t.shape}")
         Q = self.params['Qslope'](t.squeeze(-1)) * t + self.params['Qincpt'](t.squeeze(-1))
         P = 0.0 * t + self.params['Pincpt'](t.squeeze(-1))
+        print(f"[predict_v] Q shape: {Q.shape}, P shape: {P.shape}, latent dim: {self.latent_dim}")
         QP = torch.cat([Q,P], axis = -1).reshape([-1, self.latent_dim * 2])
-        qp = self.net(QP)    
+        # QP = torch.cat([Q, P], dim=-1)
+        qp = self.net(QP)
+        print(f"[predict_v] QP shape: {QP.shape}")
         grad_output = self.params['Qslope'](t.squeeze(-1)).repeat([1,QP.shape[0]//self.trajs, 1]).reshape([-1, self.latent_dim])
         grad_output1 = torch.cat([grad_output,torch.zeros_like(grad_output)], dim = -1)
+        print(f"[predict_v] predict_v grad shape: {grad_output.shape} grad1 shape: {grad_output1.shape}")
         v = torch.autograd.functional.jvp(self.net, QP, grad_output1, create_graph=True)[1][:,:self.latent_dim].unsqueeze(0)
         if returnnp:
             v = v.detach().cpu().numpy()
+        print(f"[predict_v] predict v shape: {v.shape}")
         return v
     
     def LBFGS_training(self, X, y, returnnp=False, lbfgs_step = 0):

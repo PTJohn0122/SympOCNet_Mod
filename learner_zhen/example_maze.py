@@ -210,7 +210,7 @@ def main():
     parser.add_argument('--act', type = str, default = 'relu', help = 'activation function')
     parser.add_argument('--lagmulfreq', type = int, default = 1, help = 'the frequency of updating lagmul')
     parser.add_argument('--rho', type = float, default = 1.0, help = 'parameter for aug Lag')
-    parser.add_argument('--iters', type = int, default = 100000, help = 'number of iterations')
+    parser.add_argument('--iters', type = int, default = 5, help = 'number of iterations')
     parser.add_argument('--lbfgsiters', type = int, default = 100, help = 'number of lbfgs iterations for testcase2')
     # modify the following flags to test
     parser.add_argument('--testcase', type = int, default = 2, help = '1 for comparison, 2 for mul traj')
@@ -371,11 +371,11 @@ def main():
         y_test['bd'][num_interpolate+2,0] = torch.tensor([0, -4, 0, -2, 0,2, 0,4], device = net.device, dtype = net.dtype)
         y_test['bd'] = y_test['bd'].float()
         # LBFGS training
-        net.LBFGS_training(X_test, y_test, True, args.lbfgsiters)
+        # net.LBFGS_training(X_test, y_test, True, args.lbfgsiters)
         q_pred = net.predict_q(X_test['interval'], True)
         plot_heat(q_pred, net_plot, figname+'/NN', num_interpolate, traj_count, y_train, y_test)
     else:
-        q_pred = net_plot.predict_q(data.X_test['interval'], True)[0,...]
+        q_pred = net_plot.predict_q(data.X_test['interval'].squeeze(-1), True)[0,...]
         plot_anime(q_pred, net_plot, figname + '/NN')
     loss = np.loadtxt('outputs/'+foldername+'/loss.txt')
     plot_cost_constraint(data, net_plot, loss, figname, print_every)
