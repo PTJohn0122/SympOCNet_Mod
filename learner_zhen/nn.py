@@ -14,14 +14,16 @@ from time import perf_counter
 
 
 class QincptNet(torch.nn.Module):
-    def __init__(self, num_traj, dim=8, interval_size=200):
+    def __init__(self, num_traj, latent_dim=8, interval_size=200):
         super(QincptNet, self).__init__()
         self.num_traj = num_traj
-        self.dim = dim
+        self.dim = latent_dim
         self.module = torch.nn.Sequential(
             torch.nn.Linear(interval_size, 128),
             torch.nn.ReLU(),
-            torch.nn.Linear(128, num_traj * dim)
+            torch.nn.Linear(128, 128),
+            torch.nn.ReLU(),
+            torch.nn.Linear(128, num_traj * latent_dim)
         )
     def forward(self, X):
         # print(f'QI input shape = {X.shape}')
@@ -34,14 +36,16 @@ class QincptNet(torch.nn.Module):
 
 
 class QslopeNet(torch.nn.Module):
-    def __init__(self, num_traj, dim=8, interval_size=200):
+    def __init__(self, num_traj, latent_dim=8, interval_size=200):
         super(QslopeNet, self).__init__()
         self.num_traj = num_traj
-        self.dim = dim
+        self.dim = latent_dim
         self.module = torch.nn.Sequential(
             torch.nn.Linear(interval_size, 128),
             torch.nn.ReLU(),
-            torch.nn.Linear(128, num_traj * dim)
+            torch.nn.Linear(128, 128),
+            torch.nn.ReLU(),
+            torch.nn.Linear(128, num_traj * latent_dim)
         )
 
     def forward(self, X):
@@ -55,14 +59,16 @@ class QslopeNet(torch.nn.Module):
 
 
 class PincptNet(torch.nn.Module):
-    def __init__(self, num_traj, dim=8, interval_size=200):
+    def __init__(self, num_traj, latent_dim=8, interval_size=200):
         super(PincptNet, self).__init__()
         self.num_traj = num_traj
-        self.dim = dim
+        self.dim = latent_dim
         self.module = torch.nn.Sequential(
             torch.nn.Linear(interval_size, 128),
             torch.nn.ReLU(),
-            torch.nn.Linear(128, num_traj * dim)
+            torch.nn.Linear(128, 128),
+            torch.nn.ReLU(),
+            torch.nn.Linear(128, num_traj * latent_dim)
         )
 
     def forward(self, X):
@@ -91,7 +97,7 @@ class SPNN(ln.nn.LossNN):
         self.C = C                  # speed limit
         self.add_dim = add_dim      # added dimension
         self.ifpenalty = ifpenalty  # True for using penalty, False for augmented Lagrangian
-        self.latent_dim = add_dim + dim
+        self.latent_dim = add_dim + dim # Q: What is added dimension
         self.add_loss = add_loss    # 0 for no added loss, 1 for aug lag / log penalty, 2 for quad penalty
         # parameters for Lag mul begins
         # Lagrange multiplier for h in opt ctrl prob. Will be a vector in later update
@@ -115,6 +121,7 @@ class SPNN(ln.nn.LossNN):
     def criterion(self, X, y):
         # Q = self.params['Qslope'] * X['interval'] + self.params['Qincpt']
         # P = 0.0 * X['interval'] + self.params['Pincpt']
+        print(f"[criterion] X.shape: {X['interval'].shape}\n")
         Q = self.params['Qslope'](X['interval'].squeeze(-1)) * X['interval'] + self.params['Qincpt'](X['interval'].squeeze(-1))
 
         P = 0.0 * X['interval'] + self.params['Pincpt'](X['interval'].squeeze(-1))

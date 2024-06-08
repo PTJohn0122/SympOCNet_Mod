@@ -210,7 +210,7 @@ def main():
     parser.add_argument('--act', type = str, default = 'relu', help = 'activation function')
     parser.add_argument('--lagmulfreq', type = int, default = 1, help = 'the frequency of updating lagmul')
     parser.add_argument('--rho', type = float, default = 1.0, help = 'parameter for aug Lag')
-    parser.add_argument('--iters', type = int, default = 5, help = 'number of iterations')
+    parser.add_argument('--iters', type = int, default = 10000, help = 'number of iterations')
     parser.add_argument('--lbfgsiters', type = int, default = 100, help = 'number of lbfgs iterations for testcase2')
     # modify the following flags to test
     parser.add_argument('--testcase', type = int, default = 2, help = '1 for comparison, 2 for mul traj')
